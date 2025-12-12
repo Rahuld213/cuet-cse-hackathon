@@ -1,0 +1,17 @@
+# Global code owners
+* @your-username
+
+# CI/CD and deployment files
+/.github/ @your-username
+/docker/ @your-username
+package.json @your-username
+package-lock.json @your-username
+
+# Security and configuration
+.env.example @your-username
+tsconfig.json @your-username
+eslint.config.mjs @your-username
+
+# Documentation
+README.md @your-username
+ARCHITECTURE.md @your-username

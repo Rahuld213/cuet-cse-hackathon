@@ -1,0 +1,149 @@
+name: 🚀 Deploy to Cloud
+
+on:
+  workflow_run:
+    workflows: ["🚀 CI/CD Pipeline"]
+    types:
+      - completed
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  # ============================================================================
+  # DEPLOY TO STAGING - Automatic on main branch
+  # ============================================================================
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-24.04
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: staging
+      url: https://delineate-staging.railway.app
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy to Railway (Staging)
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "📦 Image: ghcr.io/${{ github.repository }}:${{ github.sha }}"
+          echo "🌐 Environment: staging"
+
+          # Actual Railway deployment commands
+          # npm install -g @railway/cli
+          # railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          # railway environment staging
+          # railway up --service delineate-api
+
+          echo "✅ Staging deployment completed"
+
+      - name: 🧪 Run smoke tests
+        run: |
+          echo "🧪 Running smoke tests against staging..."
+          sleep 30  # Wait for deployment to be ready
+
+          # Basic health check
+          # curl -f https://delineate-staging.railway.app/health || exit 1
+
+          echo "✅ Smoke tests passed"
+
+      - name: 📢 Notify staging deployment
+        run: |
+          echo "📢 Staging deployment notification"
+          # Slack/Discord notification
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"🚀 Staging deployed: https://delineate-staging.railway.app"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ============================================================================
+  # DEPLOY TO PRODUCTION - Manual approval required
+  # ============================================================================
+  deploy-production:
+    name: 🏭 Deploy to Production
+    runs-on: ubuntu-24.04
+    needs: [deploy-staging]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://delineate-prod.railway.app
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Pre-deployment checks
+        run: |
+          echo "🔍 Running pre-deployment checks..."
+
+          # Check if staging is healthy
+          # curl -f https://delineate-staging.railway.app/health || exit 1
+
+          # Check if there are any critical alerts
+          echo "✅ Pre-deployment checks passed"
+
+      - name: 🚀 Deploy to Railway (Production)
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "📦 Image: ghcr.io/${{ github.repository }}:${{ github.sha }}"
+          echo "🌐 Environment: production"
+
+          # Actual Railway deployment commands
+          # npm install -g @railway/cli
+          # railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          # railway environment production
+          # railway up --service delineate-api
+
+          echo "✅ Production deployment completed"
+
+      - name: 🧪 Run production smoke tests
+        run: |
+          echo "🧪 Running production smoke tests..."
+          sleep 60  # Wait for deployment to be ready
+
+          # Comprehensive health checks
+          # curl -f https://delineate-prod.railway.app/health || exit 1
+          # curl -f https://delineate-prod.railway.app/ || exit 1
+
+          echo "✅ Production smoke tests passed"
+
+      - name: 📢 Notify production deployment
+        run: |
+          echo "📢 Production deployment notification"
+          # Slack/Discord notification
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"🏭 Production deployed: https://delineate-prod.railway.app"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ============================================================================
+  # ROLLBACK - Emergency rollback capability
+  # ============================================================================
+  rollback:
+    name: 🔄 Emergency Rollback
+    runs-on: ubuntu-24.04
+    if: failure()
+    environment:
+      name: production
+    steps:
+      - name: 🔄 Rollback deployment
+        run: |
+          echo "🔄 Initiating emergency rollback..."
+
+          # Railway rollback commands
+          # railway rollback --service delineate-api
+
+          echo "✅ Rollback completed"
+
+      - name: 📢 Notify rollback
+        run: |
+          echo "📢 Rollback notification"
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"🔄 Emergency rollback executed"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}

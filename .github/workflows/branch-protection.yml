@@ -1,0 +1,81 @@
+name: 🛡️ Branch Protection
+
+on:
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ============================================================================
+  # PR VALIDATION - Ensure PR meets requirements
+  # ============================================================================
+  pr-validation:
+    name: 🔍 PR Validation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 Check PR title format
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .+ ]]; then
+            echo "❌ PR title must follow conventional commits format"
+            echo "Examples: feat: add new feature, fix(api): resolve bug"
+            exit 1
+          fi
+          echo "✅ PR title format is valid"
+
+      - name: 📊 Check changed files
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "📁 Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Check if critical files are modified
+          if echo "$CHANGED_FILES" | grep -E "(package\.json|Dockerfile|docker-compose)" > /dev/null; then
+            echo "⚠️ Critical files modified - extra review required"
+          fi
+
+      - name: 📏 Check PR size
+        run: |
+          ADDITIONS=$(git diff --shortstat origin/${{ github.base_ref }}...HEAD | grep -oE '[0-9]+ insertions?' | grep -oE '[0-9]+' || echo "0")
+          DELETIONS=$(git diff --shortstat origin/${{ github.base_ref }}...HEAD | grep -oE '[0-9]+ deletions?' | grep -oE '[0-9]+' || echo "0")
+          TOTAL_CHANGES=$((ADDITIONS + DELETIONS))
+
+          echo "📊 PR Statistics:"
+          echo "  Additions: $ADDITIONS"
+          echo "  Deletions: $DELETIONS"
+          echo "  Total changes: $TOTAL_CHANGES"
+
+          if [ $TOTAL_CHANGES -gt 500 ]; then
+            echo "⚠️ Large PR detected ($TOTAL_CHANGES lines). Consider breaking into smaller PRs."
+          else
+            echo "✅ PR size is reasonable"
+          fi
+
+  # ============================================================================
+  # DEPENDENCY CHECK - Verify no malicious dependencies
+  # ============================================================================
+  dependency-check:
+    name: 🔒 Dependency Security Check
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: 🔍 Audit dependencies
+        run: |
+          npm audit --audit-level=moderate
+          echo "✅ Dependency audit passed"
+
+      - name: 📊 Check for outdated packages
+        run: |
+          npm outdated || true
+          echo "ℹ️ Outdated packages check completed"
