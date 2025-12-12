@@ -30,7 +30,7 @@ jobs:
       url: https://delineate-staging.railway.app
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🚀 Deploy to Railway (Staging)
         run: |
@@ -77,7 +77,7 @@ jobs:
       url: https://delineate-prod.railway.app
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🔍 Pre-deployment checks
         run: |
