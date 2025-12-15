@@ -28,7 +28,7 @@
     "@scalar/hono-api-reference": "^0.9.28",
     "hono": "^4.10.8",
     "hono-rate-limiter": "^0.4.2",
-    "zod": "^4.1.13"
+    "zod": "^4.2.0"
   },
   "devDependencies": {
     "@hono/eslint-config": "^2.0.3",
